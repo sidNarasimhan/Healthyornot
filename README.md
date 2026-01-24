@@ -6,7 +6,7 @@ An AI-powered food label scanner that helps you make healthier choices by analyz
 
 - 📸 **Camera Integration** - Take photos of food labels directly from your device
 - 🖼️ **Image Upload** - Upload existing photos of nutrition labels
-- 🤖 **AI Analysis** - Powered by Claude AI for accurate ingredient analysis
+- 🤖 **AI Analysis** - Powered by OpenAI GPT-4o for accurate ingredient analysis
 - 📊 **Health Scoring** - Get a 0-100 health score for any food product
 - 💡 **Smart Recommendations** - Understand pros, cons, and get personalized recommendations
 - 🎨 **Modern UI** - Clean, responsive design that works on all devices
@@ -14,14 +14,14 @@ An AI-powered food label scanner that helps you make healthier choices by analyz
 ## How It Works
 
 1. **Scan or Upload** - Take a photo or upload an image of any food label
-2. **AI Analysis** - Claude AI reads the ingredients, nutritional facts, and identifies additives
+2. **AI Analysis** - GPT-4o reads the ingredients, nutritional facts, and identifies additives
 3. **Get Insights** - Receive a health score, ingredient breakdown, and recommendations in simple language
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS with custom animations
-- **AI**: Anthropic Claude 3.5 Sonnet (Vision API)
+- **AI**: OpenAI GPT-4o (Vision API)
 - **Deployment**: Vercel
 
 ## Getting Started
@@ -29,7 +29,7 @@ An AI-powered food label scanner that helps you make healthier choices by analyz
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Anthropic API key
+- OpenAI API key
 
 ### Installation
 
@@ -46,7 +46,7 @@ npm install
 
 3. Create a `.env.local` file:
 ```bash
-ANTHROPIC_API_KEY=your_api_key_here
+OPENAI_API_KEY=your_api_key_here
 ```
 
 4. Run the development server:
@@ -69,7 +69,7 @@ This app is configured for easy deployment on Vercel:
 
 1. Push your code to GitHub
 2. Import the repository in Vercel
-3. Add your `ANTHROPIC_API_KEY` environment variable
+3. Add your `OPENAI_API_KEY` environment variable
 4. Deploy!
 
 ## Usage Tips
@@ -93,4 +93,4 @@ ISC
 
 ## Built With
 
-Powered by Claude AI - Making healthy choices easier.
+Powered by OpenAI GPT-4o - Making healthy choices easier.
