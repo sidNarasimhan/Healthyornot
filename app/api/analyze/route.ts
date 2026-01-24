@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 2048,
+      temperature: 0, // Deterministic responses for consistency
+      seed: 42, // Fixed seed for reproducible results
       messages: [
         {
           role: 'user',
@@ -52,34 +54,56 @@ export async function POST(request: NextRequest) {
             },
             {
               type: 'text',
-              text: `You are a nutrition expert and food scientist. Analyze this food label image and provide a comprehensive health assessment.
+              text: `You are a nutrition expert and food scientist. Analyze this food label image and provide a comprehensive, CONSISTENT health assessment based on objective nutritional criteria.
 
-Please extract and analyze:
-1. All visible ingredients
-2. Nutritional information (calories, sugar, sodium, fats, protein, etc.)
+Extract and analyze:
+1. All visible ingredients (list first 5-10 key ones)
+2. Nutritional information (calories, sugar, sodium, saturated fat, protein, fiber, vitamins)
 3. Additives, preservatives, and artificial ingredients
-4. Any allergens or concerning chemicals
+4. Allergens and concerning chemicals
 
-Based on your analysis, provide a response in the following JSON format:
+Provide a response in this EXACT JSON format:
 {
   "healthScore": <number 0-100>,
   "ingredients": [<array of key ingredients found>],
-  "analysis": "<2-3 sentence overall health assessment in simple terms>",
-  "pros": [<array of positive aspects, health benefits>],
-  "cons": [<array of negative aspects, health concerns>],
-  "recommendation": "<brief recommendation on consumption - should they eat it, how often, etc.>"
+  "analysis": "<2-3 sentence overall health assessment>",
+  "pros": [<array of 2-4 positive aspects>],
+  "cons": [<array of 2-4 negative aspects>],
+  "recommendation": "<brief consumption recommendation>"
 }
 
-Scoring guidelines:
-- 80-100: Excellent - whole foods, minimal processing, great nutrition
-- 60-79: Good - decent nutrition, some processing acceptable
-- 40-59: Fair - moderate concerns, okay occasionally
-- 20-39: Poor - significant concerns, limit consumption
-- 0-19: Unhealthy - avoid or consume very rarely
+SCORING CRITERIA (apply consistently):
+Calculate score by starting at 50 and adjusting:
 
-Translate all scientific/chemical jargon into simple language people can understand. Be honest and direct about health impacts.
+SUBTRACT points for:
+- Added sugars: -2 per 5g (max -20)
+- Sodium: -2 per 200mg (max -20)
+- Saturated fat: -2 per 3g (max -15)
+- Trans fat: -10 per 1g (max -20)
+- Artificial sweeteners/colors: -5 each (max -10)
+- High fructose corn syrup: -10
+- Hydrogenated oils: -10
+- Preservatives (BHA, BHT, sodium benzoate): -5 each (max -10)
 
-IMPORTANT: Respond ONLY with valid JSON, no additional text or markdown.`,
+ADD points for:
+- Whole food ingredients (first 3): +5 each (max +15)
+- Fiber: +2 per 3g (max +15)
+- Protein: +2 per 5g (max +15)
+- Vitamins/minerals (>10% DV): +2 each (max +10)
+- Organic certification: +5
+- No artificial ingredients: +5
+- Low/no added sugar: +5
+
+Final ranges:
+- 80-100: Whole foods, minimal processing, excellent nutrition
+- 60-79: Good nutrition, acceptable processing
+- 40-59: Moderate concerns, consume occasionally
+- 20-39: Significant health concerns, limit intake
+- 0-19: Highly processed, avoid regularly
+
+BE CONSISTENT: Same label = same score. Base decisions on measurable nutritional data, not subjective interpretation.
+
+IMPORTANT: Return ONLY valid JSON, no markdown formatting.`,
             },
           ],
         },
