@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface AnalysisResult {
@@ -25,40 +25,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract base64 data and media type
-    const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
+    // Validate base64 image format
+    if (!image.startsWith('data:image/')) {
       return NextResponse.json(
         { error: 'Invalid image format' },
         { status: 400 }
       );
     }
 
-    const mediaType = matches[1];
-    const base64Data = matches[2];
-
-    // Validate media type
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) {
-      return NextResponse.json(
-        { error: 'Unsupported image format. Please use JPEG, PNG, GIF, or WebP' },
-        { status: 400 }
-      );
-    }
-
-    // Call Claude API with vision
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+    // Call OpenAI API with vision
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 2048,
       messages: [
         {
           role: 'user',
           content: [
             {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-                data: base64Data,
+              type: 'image_url',
+              image_url: {
+                url: image,
+                detail: 'high'
               },
             },
             {
@@ -98,16 +85,16 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or markdown.`,
     });
 
     // Extract the text response
-    const textContent = message.content.find((block) => block.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      throw new Error('No text response from Claude');
+    const messageContent = response.choices[0]?.message?.content;
+    if (!messageContent) {
+      throw new Error('No response from OpenAI');
     }
 
     // Parse the JSON response
     let result: AnalysisResult;
     try {
       // Clean up the response - remove markdown code blocks if present
-      let jsonText = textContent.text.trim();
+      let jsonText = messageContent.trim();
       if (jsonText.startsWith('```json')) {
         jsonText = jsonText.replace(/^```json\n/, '').replace(/\n```$/, '');
       } else if (jsonText.startsWith('```')) {
@@ -116,7 +103,7 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or markdown.`,
 
       result = JSON.parse(jsonText);
     } catch (parseError) {
-      console.error('Failed to parse Claude response:', textContent.text);
+      console.error('Failed to parse OpenAI response:', messageContent);
       throw new Error('Failed to parse AI response');
     }
 
@@ -139,8 +126,8 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or markdown.`,
   } catch (error) {
     console.error('Analysis error:', error);
 
-    // Check if it's an Anthropic API error
-    if (error instanceof Anthropic.APIError) {
+    // Check if it's an OpenAI API error
+    if (error instanceof OpenAI.APIError) {
       return NextResponse.json(
         { error: `AI service error: ${error.message}` },
         { status: error.status || 500 }
