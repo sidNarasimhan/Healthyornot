@@ -261,6 +261,40 @@ export default function Home() {
                 <div className={`text-2xl font-semibold ${getScoreColor(result.healthScore)}`}>
                   {getScoreLabel(result.healthScore)}
                 </div>
+
+                {/* Cat Reaction GIF */}
+                <div className="mt-6 flex justify-center">
+                  {result.healthScore < 50 && (
+                    <div className="animate-fade-in">
+                      <img
+                        src="https://media.tenor.com/MadXGRls8QsAAAAi/disgusted-cat.gif"
+                        alt="Disgusted cat reaction"
+                        className="w-32 h-32 rounded-2xl"
+                      />
+                      <p className="text-sm text-gray-600 mt-2">Even the cat disapproves! 😿</p>
+                    </div>
+                  )}
+                  {result.healthScore >= 80 && (
+                    <div className="animate-fade-in">
+                      <img
+                        src="https://media.tenor.com/VEFEjiN40fwAAAAi/cat-happy-cat.gif"
+                        alt="Happy cat reaction"
+                        className="w-32 h-32 rounded-2xl"
+                      />
+                      <p className="text-sm text-gray-600 mt-2">The cat approves! 😺</p>
+                    </div>
+                  )}
+                  {result.healthScore >= 50 && result.healthScore < 80 && (
+                    <div className="animate-fade-in">
+                      <img
+                        src="https://media.tenor.com/WZQym-7cV_UAAAAC/cat-thinking.gif"
+                        alt="Thinking cat reaction"
+                        className="w-32 h-32 rounded-2xl"
+                      />
+                      <p className="text-sm text-gray-600 mt-2">The cat is thinking... 🤔</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Progress Bar */}
