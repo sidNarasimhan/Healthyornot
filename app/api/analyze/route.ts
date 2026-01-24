@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 60000, // 60 second timeout
+  maxRetries: 2,
 });
 
 interface AnalysisResult {
@@ -128,12 +130,28 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text or markdown.`,
 
     // Check if it's an OpenAI API error
     if (error instanceof OpenAI.APIError) {
+      console.error('OpenAI API Error:', {
+        status: error.status,
+        message: error.message,
+        type: error.type,
+        code: error.code,
+      });
       return NextResponse.json(
         { error: `AI service error: ${error.message}` },
         { status: error.status || 500 }
       );
     }
 
+    // Handle connection errors specifically
+    if (error instanceof Error && error.message.includes('fetch')) {
+      console.error('Network/Connection error:', error.message);
+      return NextResponse.json(
+        { error: 'Network error connecting to AI service. Please check your internet connection and try again.' },
+        { status: 503 }
+      );
+    }
+
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to analyze image' },
       { status: 500 }
