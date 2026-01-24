@@ -21,8 +21,8 @@ This guide will help you deploy your HealthyOrNot app to Vercel.
 
 4. **Configure Environment Variables**
    - In the "Environment Variables" section, add:
-     - **Name**: `ANTHROPIC_API_KEY`
-     - **Value**: `<YOUR_ANTHROPIC_API_KEY>` (use the API key provided)
+     - **Name**: `OPENAI_API_KEY`
+     - **Value**: `<YOUR_OPENAI_API_KEY>` (use the API key provided)
 
 5. **Deploy**
    - Click "Deploy"
@@ -44,8 +44,8 @@ This guide will help you deploy your HealthyOrNot app to Vercel.
 
 3. **Set Environment Variables**
    ```bash
-   vercel env add ANTHROPIC_API_KEY production
-   # When prompted, paste your Anthropic API key
+   vercel env add OPENAI_API_KEY production
+   # When prompted, paste your OpenAI API key
    ```
 
 4. **Redeploy**
@@ -60,12 +60,12 @@ This guide will help you deploy your HealthyOrNot app to Vercel.
 1. Connect your GitHub repository
 2. Set build command: `npm run build`
 3. Set publish directory: `.next`
-4. Add environment variable: `ANTHROPIC_API_KEY`
+4. Add environment variable: `OPENAI_API_KEY`
 
 ### Railway
 
 1. Create new project from GitHub repo
-2. Add environment variable: `ANTHROPIC_API_KEY`
+2. Add environment variable: `OPENAI_API_KEY`
 3. Railway will auto-detect Next.js and deploy
 
 ### Docker (Self-hosted)
@@ -75,7 +75,7 @@ This guide will help you deploy your HealthyOrNot app to Vercel.
 docker build -t healthyornot .
 
 # Run
-docker run -p 3000:3000 -e ANTHROPIC_API_KEY=your_key healthyornot
+docker run -p 3000:3000 -e OPENAI_API_KEY=your_key healthyornot
 ```
 
 ## Post-Deployment Checklist
@@ -99,7 +99,7 @@ docker run -p 3000:3000 -e ANTHROPIC_API_KEY=your_key healthyornot
 ## Troubleshooting
 
 ### "Failed to analyze image" error
-- Check that `ANTHROPIC_API_KEY` is set correctly in Vercel
+- Check that `OPENAI_API_KEY` is set correctly in Vercel
 - Verify the API key is valid
 - Check the Vercel function logs
 
@@ -130,4 +130,4 @@ docker run -p 3000:3000 -e ANTHROPIC_API_KEY=your_key healthyornot
 
 - Vercel Docs: https://vercel.com/docs
 - Next.js Docs: https://nextjs.org/docs
-- Anthropic API Docs: https://docs.anthropic.com
+- OpenAI API Docs: https://platform.openai.com/docs

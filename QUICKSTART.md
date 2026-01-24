@@ -8,7 +8,7 @@ A complete, production-ready food label scanner with:
 
 - ✅ Modern, responsive UI (works on mobile & desktop)
 - ✅ Camera capture and image upload
-- ✅ AI-powered food analysis using Claude Vision API
+- ✅ AI-powered food analysis using OpenAI GPT-4o Vision API
 - ✅ Health scoring system (0-100)
 - ✅ Ingredient breakdown with pros/cons
 - ✅ Personalized recommendations
@@ -31,8 +31,8 @@ Visit [vercel.com](https://vercel.com) and sign in with GitHub.
 
 Before clicking deploy, add this:
 
-- **Variable Name**: `ANTHROPIC_API_KEY`
-- **Variable Value**: Your Anthropic API key (the one you provided earlier)
+- **Variable Name**: `OPENAI_API_KEY`
+- **Variable Value**: Your OpenAI API key (the one you provided earlier)
 
 ### Step 4: Deploy
 
@@ -100,14 +100,14 @@ Healthyornot/
 - **Framework**: Next.js 15 (React 19)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **AI**: Anthropic Claude 3.5 Sonnet
+- **AI**: OpenAI GPT-4o
 - **Deployment**: Vercel (serverless)
 
 ## Cost Estimate
 
 - **Vercel Hosting**: Free (includes 100GB bandwidth)
-- **Claude API**: ~$0.003 per image scan
-  - Example: 1000 scans/month = ~$3
+- **OpenAI API**: ~$0.01 per image scan (GPT-4o Vision)
+  - Example: 1000 scans/month = ~$10
 
 ## Next Steps
 
