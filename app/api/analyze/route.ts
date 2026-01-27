@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  timeout: 60000, // 60 second timeout
+  timeout: 60000,
   maxRetries: 2,
 });
 
@@ -14,6 +14,7 @@ interface AnalysisResult {
   pros: string[];
   cons: string[];
   recommendation: string;
+  isValidLabel?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -35,12 +36,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call OpenAI API with vision
+    // Call OpenAI API with vision - with nutrition label validation
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 2048,
-      temperature: 0, // Deterministic responses for consistency
-      seed: 42, // Fixed seed for reproducible results
+      temperature: 0,
+      seed: 42,
       messages: [
         {
           role: 'user',
@@ -54,18 +55,28 @@ export async function POST(request: NextRequest) {
             },
             {
               type: 'text',
-              text: `You are a nutrition expert and food scientist. Analyze this food label image and provide a comprehensive, CONSISTENT health assessment based on objective nutritional criteria.
+              text: `You are a nutrition expert and food scientist. First, determine if this image contains a food/nutrition label, nutrition facts panel, or ingredient list from a food product.
 
-Extract and analyze:
-1. All visible ingredients (list first 5-10 key ones)
-2. Nutritional information (calories, sugar, sodium, saturated fat, protein, fiber, vitamins)
-3. Additives, preservatives, and artificial ingredients
-4. Allergens and concerning chemicals
+STEP 1 - VALIDATE IMAGE:
+Check if the image contains ANY of the following:
+- Nutrition Facts panel (US style)
+- Nutrition Information table (UK/EU/India/other international styles)
+- Ingredient list from food packaging
+- Back label of a food/beverage product
+- Any food product packaging showing nutritional data
 
-Provide a response in this EXACT JSON format:
+If the image does NOT contain nutritional information or food label content (e.g., it's a selfie, landscape, random object, front of package without nutrition info, etc.), respond with EXACTLY this JSON:
 {
+  "isValidLabel": false,
+  "error": "Please upload a picture of the nutrition label or back label of a food product. This image doesn't appear to contain nutritional information."
+}
+
+STEP 2 - IF VALID, ANALYZE:
+If the image DOES contain a nutrition label or ingredient list, analyze it and respond with:
+{
+  "isValidLabel": true,
   "healthScore": <number 0-100>,
-  "ingredients": [<array of key ingredients found>],
+  "ingredients": [<array of key ingredients found, up to 10>],
   "analysis": "<2-3 sentence overall health assessment>",
   "pros": [<array of 2-4 positive aspects>],
   "cons": [<array of 2-4 negative aspects>],
@@ -73,58 +84,62 @@ Provide a response in this EXACT JSON format:
 }
 
 SCORING CRITERIA (apply consistently):
-Calculate score by starting at 50 and adjusting:
+Start at 50 and adjust:
 
 SUBTRACT points for:
 - Added sugars: -2 per 5g (max -20)
 - Sodium: -2 per 200mg (max -20)
 - Saturated fat: -2 per 3g (max -15)
 - Trans fat: -10 per 1g (max -20)
-- Artificial sweeteners/colors: -5 each (max -10)
+- Artificial sweeteners (aspartame, sucralose, acesulfame-k): -5 each (max -10)
+- Artificial colors (E-numbers like E150, tartrazine): -3 each (max -10)
 - High fructose corn syrup: -10
-- Hydrogenated oils: -10
-- Preservatives (BHA, BHT, sodium benzoate): -5 each (max -10)
+- Hydrogenated/partially hydrogenated oils: -10
+- Preservatives (BHA, BHT, sodium benzoate, potassium sorbate): -3 each (max -10)
 
 ADD points for:
-- Whole food ingredients (first 3): +5 each (max +15)
+- Whole food as first ingredient: +10
 - Fiber: +2 per 3g (max +15)
 - Protein: +2 per 5g (max +15)
 - Vitamins/minerals (>10% DV): +2 each (max +10)
-- Organic certification: +5
 - No artificial ingredients: +5
-- Low/no added sugar: +5
+- No added sugar or low sugar (<5g): +5
+- Whole grains: +5
 
-Final ranges:
-- 80-100: Whole foods, minimal processing, excellent nutrition
-- 60-79: Good nutrition, acceptable processing
-- 40-59: Moderate concerns, consume occasionally
-- 20-39: Significant health concerns, limit intake
-- 0-19: Highly processed, avoid regularly
+INTERNATIONAL LABEL SUPPORT:
+- Recognize nutrition labels in ANY format (US, EU, UK, India, Australia, etc.)
+- Handle both metric (g, mg, kJ) and imperial units
+- Recognize "per serving" and "per 100g" formats
+- Understand multi-language labels
 
-BE CONSISTENT: Same label = same score. Base decisions on measurable nutritional data, not subjective interpretation.
+Final score ranges:
+- 80-100: Excellent - whole foods, minimal processing
+- 60-79: Good - acceptable nutrition and processing
+- 40-59: Fair - moderate concerns, consume occasionally
+- 20-39: Poor - significant health concerns, limit intake
+- 0-19: Avoid - highly processed, unhealthy
 
-IMPORTANT: Return ONLY valid JSON, no markdown formatting.`,
+IMPORTANT: Return ONLY valid JSON, no markdown formatting or code blocks.`,
             },
           ],
         },
       ],
     });
 
-    // Extract the text response
     const messageContent = response.choices[0]?.message?.content;
     if (!messageContent) {
-      throw new Error('No response from OpenAI');
+      throw new Error('No response from AI service');
     }
 
     // Parse the JSON response
     let result: AnalysisResult;
     try {
-      // Clean up the response - remove markdown code blocks if present
       let jsonText = messageContent.trim();
+      // Remove markdown code blocks if present
       if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.replace(/^```json\n/, '').replace(/\n```$/, '');
+        jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
       } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/^```\n/, '').replace(/\n```$/, '');
+        jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '');
       }
 
       result = JSON.parse(jsonText);
@@ -133,7 +148,18 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting.`,
       throw new Error('Failed to parse AI response');
     }
 
-    // Validate the response structure
+    // Check if image was validated as a nutrition label
+    if (result.isValidLabel === false) {
+      return NextResponse.json(
+        {
+          error: result.error || 'Please upload a picture of the nutrition label or back label of a food product.',
+          isValidLabel: false
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate the response structure for valid labels
     if (
       typeof result.healthScore !== 'number' ||
       !Array.isArray(result.ingredients) ||
@@ -148,11 +174,13 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting.`,
     // Ensure health score is within range
     result.healthScore = Math.max(0, Math.min(100, Math.round(result.healthScore)));
 
-    return NextResponse.json(result);
+    // Remove the isValidLabel field from successful response
+    const { isValidLabel, ...cleanResult } = result;
+
+    return NextResponse.json(cleanResult);
   } catch (error) {
     console.error('Analysis error:', error);
 
-    // Check if it's an OpenAI API error
     if (error instanceof OpenAI.APIError) {
       console.error('OpenAI API Error:', {
         status: error.status,
@@ -160,22 +188,27 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting.`,
         type: error.type,
         code: error.code,
       });
+
+      if (error.status === 401) {
+        return NextResponse.json(
+          { error: 'AI service configuration error. Please contact support.' },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         { error: `AI service error: ${error.message}` },
         { status: error.status || 500 }
       );
     }
 
-    // Handle connection errors specifically
     if (error instanceof Error && error.message.includes('fetch')) {
-      console.error('Network/Connection error:', error.message);
       return NextResponse.json(
         { error: 'Network error connecting to AI service. Please check your internet connection and try again.' },
         { status: 503 }
       );
     }
 
-    console.error('Unexpected error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to analyze image' },
       { status: 500 }
