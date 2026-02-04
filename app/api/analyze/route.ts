@@ -1,6 +1,10 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Configure API route for larger payloads and longer execution
+export const maxDuration = 60; // Maximum execution time in seconds
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   timeout: 60000, // 60 second timeout
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Call OpenAI API with vision
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
-      max_tokens: 2048,
+      max_tokens: 3500, // Increased for detailed health risks analysis
       temperature: 0, // Deterministic responses for consistency
       seed: 42, // Fixed seed for reproducible results
       messages: [
