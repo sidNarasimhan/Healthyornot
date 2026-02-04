@@ -9,6 +9,12 @@ interface AnalysisResult {
   pros: string[];
   cons: string[];
   recommendation: string;
+  healthRisks: Array<{
+    ingredient: string;
+    why: string;
+    risks: string[];
+    longTermEffects: string;
+  }>;
 }
 
 export default function Home() {
@@ -366,6 +372,58 @@ export default function Home() {
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Health Risks & Long-Term Effects */}
+              {result.healthRisks && result.healthRisks.length > 0 && (
+                <div className="mb-6 bg-red-50 rounded-2xl p-6 border-2 border-red-200">
+                  <h4 className="font-semibold text-red-900 mb-4 flex items-center gap-2 text-lg">
+                    <span>⚠️</span> Health Risks & Long-Term Effects
+                  </h4>
+                  <div className="space-y-4">
+                    {result.healthRisks.map((risk, index) => (
+                      <div key={index} className="bg-white rounded-xl p-4 border border-red-200">
+                        <div className="mb-3">
+                          <h5 className="font-bold text-red-800 text-base mb-1">
+                            {risk.ingredient}
+                          </h5>
+                          <p className="text-gray-700 text-sm leading-relaxed">
+                            <span className="font-semibold text-red-700">Why it's concerning: </span>
+                            {risk.why}
+                          </p>
+                        </div>
+
+                        {risk.risks && risk.risks.length > 0 && (
+                          <div className="mb-3">
+                            <p className="font-semibold text-red-700 text-sm mb-2">
+                              Associated health conditions:
+                            </p>
+                            <ul className="space-y-1">
+                              {risk.risks.map((condition, idx) => (
+                                <li key={idx} className="text-gray-700 text-sm flex items-start gap-2">
+                                  <span className="text-red-500 mt-0.5">◆</span>
+                                  <span>{condition}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                          <p className="font-semibold text-orange-800 text-sm mb-1">
+                            Long-term effects:
+                          </p>
+                          <p className="text-gray-700 text-sm">
+                            {risk.longTermEffects}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-red-700 mt-4 italic">
+                    💡 Regular consumption of products containing these ingredients may increase health risks over time.
+                  </p>
                 </div>
               )}
 

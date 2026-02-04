@@ -14,6 +14,12 @@ interface AnalysisResult {
   pros: string[];
   cons: string[];
   recommendation: string;
+  healthRisks: Array<{
+    ingredient: string;
+    why: string;
+    risks: string[];
+    longTermEffects: string;
+  }>;
 }
 
 export async function POST(request: NextRequest) {
@@ -69,7 +75,15 @@ Provide a response in this EXACT JSON format:
   "analysis": "<2-3 sentence overall health assessment>",
   "pros": [<array of 2-4 positive aspects>],
   "cons": [<array of 2-4 negative aspects>],
-  "recommendation": "<brief consumption recommendation>"
+  "recommendation": "<brief consumption recommendation>",
+  "healthRisks": [
+    {
+      "ingredient": "<harmful ingredient name>",
+      "why": "<why this ingredient is concerning in simple terms>",
+      "risks": ["<specific illness/condition 1>", "<specific illness/condition 2>"],
+      "longTermEffects": "<long-term health effects from regular consumption>"
+    }
+  ]
 }
 
 SCORING CRITERIA (apply consistently):
@@ -100,6 +114,25 @@ Final ranges:
 - 40-59: Moderate concerns, consume occasionally
 - 20-39: Significant health concerns, limit intake
 - 0-19: Highly processed, avoid regularly
+
+HEALTH RISKS ANALYSIS:
+For each concerning ingredient (limit to 3-5 most harmful ones), provide:
+- ingredient: The specific ingredient name
+- why: Explain in 1-2 sentences why it's concerning (mechanism of harm)
+- risks: List 2-4 specific health conditions or illnesses linked to this ingredient
+- longTermEffects: Describe cumulative effects from regular/chronic consumption
+
+Focus on ingredients like:
+- High fructose corn syrup (insulin resistance, obesity, fatty liver)
+- Trans fats/hydrogenated oils (heart disease, inflammation)
+- Artificial sweeteners (gut microbiome disruption, metabolic issues)
+- Sodium benzoate (hyperactivity, allergic reactions)
+- Artificial colors (behavioral issues in children, allergic reactions)
+- MSG (headaches, allergic reactions in sensitive individuals)
+- Excessive sodium (hypertension, kidney disease, stroke)
+- Excessive sugar (diabetes, obesity, tooth decay, inflammation)
+
+Only include ingredients that are actually present in the product and pose genuine health concerns.
 
 BE CONSISTENT: Same label = same score. Base decisions on measurable nutritional data, not subjective interpretation.
 
@@ -140,13 +173,19 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting.`,
       typeof result.analysis !== 'string' ||
       !Array.isArray(result.pros) ||
       !Array.isArray(result.cons) ||
-      typeof result.recommendation !== 'string'
+      typeof result.recommendation !== 'string' ||
+      !Array.isArray(result.healthRisks)
     ) {
       throw new Error('Invalid response structure from AI');
     }
 
     // Ensure health score is within range
     result.healthScore = Math.max(0, Math.min(100, Math.round(result.healthScore)));
+
+    // Ensure healthRisks has default empty array if not provided
+    if (!result.healthRisks) {
+      result.healthRisks = [];
+    }
 
     return NextResponse.json(result);
   } catch (error) {
